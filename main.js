@@ -275,18 +275,19 @@ function createApp (doc, url, cb) {
               pending += 1
               
               fs.readFile(change[0], function (err, data) {
-                var f = change[1]
-                  , d = data.toString('base64')
+                var compiled = compile(change[1], data)
+                  , f = change[1]
+                  , d = compiled.data
                   , md5 = crypto.createHash('md5')
-                  , mime = mimetypes.lookup(path.extname(f).slice(1))
+                  , mime = mimetypes.lookup(path.extname(compiled.filename).slice(1))
                   ;
 
                 md5.update(d)
                 md5 = md5.digest('hex')
                 pending -= 1
-                if (!app.doc.attachments_md5[f] || (md5 !== app.doc.attachments_md5[f].md5) ) {
-                  app.doc._attachments[f] = {data:d, content_type:mime};
-                  app.doc.attachments_md5[f] = {revpos:revpos + 1, md5:md5};
+                if (!app.doc.attachments_md5[compiled.filename] || (md5 !== app.doc.attachments_md5[compiled.filename].md5) ) {
+                  app.doc._attachments[compiled.filename] = {data:d, content_type:mime};
+                  app.doc.attachments_md5[compiled.filename] = {revpos:revpos + 1, md5:md5};
                   dirty = true;
                   console.log("Changed "+change[0]);
                 }
