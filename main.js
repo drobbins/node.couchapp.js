@@ -91,6 +91,32 @@ function loadFiles(dir, options) {
 
   return obj;
 }
+function loadJSON(dir, options) {
+  var listings = fs.readdirSync(dir)
+    , options = options || {}
+    , obj = {};
+
+  listings.forEach(function (listing) {
+    var file = path.join(dir, listing)
+      , prop = listing.split('.')[0] // probably want regexp or something more robust
+      , stat = fs.statSync(file);
+
+      if (stat.isFile()) { 
+        var content = JSON.parse(fs.readFileSync(file).toString());
+        
+        if (options.operators) {
+          options.operators.forEach(function (op) {
+            content = op(content, options);
+          });
+        }
+        obj[prop] = content;
+      } else if (stat.isDirectory()) {
+        obj[listing] = loadFiles(file, options);
+      }
+  });
+
+  return obj;
+}
 
 /**
  * End of patch (also see exports and end of file)
@@ -117,7 +143,7 @@ function playSound () {
   spawn("/usr/bin/afplay", ["/System/Library/Sounds/Blow.aiff"]);
 }
   
-function createApp (doc, url, cb) {
+function createApp (doc, url, push_options, cb) {
   var app = {doc:doc};
   
   
@@ -144,7 +170,7 @@ function createApp (doc, url, cb) {
   }
   
   var push = function (callback) {
-    app.combine_assets();
+    if(push_options.concatinate) app.combine_assets();
     console.log('Serializing.')
     var doc = copy(app.doc);
     doc._attachments = copy(app.doc._attachments)
@@ -172,6 +198,9 @@ function createApp (doc, url, cb) {
   };
   
   var compress_js = function(source) {
+    if (! push_options.compress) {
+      return source;
+    }
     var jsp = require("uglify-js").parser;
     var pro = require("uglify-js").uglify;
 
@@ -389,3 +418,4 @@ exports.createApp = createApp
 exports.loadAttachments = loadAttachments
 exports.bin = require('./bin')
 exports.loadFiles = loadFiles
+exports.loadJSON = loadJSON

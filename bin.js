@@ -46,11 +46,24 @@ function boiler (app) {
 
 
 if (process.mainModule && process.mainModule.filename === __filename) {
-  var node = process.argv.shift()
-    , bin = process.argv.shift()
-    , command = process.argv.shift()
-    , app = process.argv.shift()
-    , couch = process.argv.shift()
+  args = []
+  options = {}
+  var couchapprc = JSON.parse( fs.readFileSync('.couchapprc').toString() );
+  
+  process.argv.forEach(function(arg) {
+    if (/^--/.test(arg)) {
+      options[arg.substr(2)] = 1
+    } else {
+      args.push(arg)
+    }
+  });
+    
+  var node = args.shift()
+    , bin = args.shift()
+    , command = args.shift()
+    , app = args.shift()
+    , couch = args.shift()
+    , ENV = 'default'
     ;
 
 
@@ -65,16 +78,10 @@ if (process.mainModule && process.mainModule.filename === __filename) {
   }
   
   // try to find couch in .couchapprc
-  if (! couch) {
-    var couchapprc = JSON.parse( fs.readFileSync('.couchapprc').toString() );
-    
-    couch = couchapprc.env['default'].db;
-  }
-
   // allow to provide ENV var as `couch` parameter
   if (!/^http/.test(couch)) {
-    var couchapprc = JSON.parse( fs.readFileSync('.couchapprc').toString() );
-    couch = couchapprc.env[ couch ].db;
+    couch && (ENV = couch);
+    couch = couchapprc.env[ ENV ].db;
   }
 
   if (command == 'help' || command == undefined) {
@@ -94,10 +101,18 @@ if (process.mainModule && process.mainModule.filename === __filename) {
     process.exit();
   }
   
+  for(var key in couchapprc.env[ ENV ]) {
+    if (key == 'db') continue;
+    options[key] || (options[key] = couchapprc.env[ ENV ][key])
+  }
+  
+  console.log('options', options)
+  
+  
   if (command == 'boiler') {
     boiler(app);
   } else {
-    couchapp.createApp(require(abspath(app)), couch, function (app) {
+    couchapp.createApp(require(abspath(app)), couch, options, function (app) {
       if (command == 'push') app.push()
       else if (command == 'sync') app.sync()
 
