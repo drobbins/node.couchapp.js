@@ -73,3 +73,88 @@ app.js example:
 
   couchapp.loadAttachments(ddoc, path.join(__dirname, '_attachments'));
 </pre>
+
+
+## added features in fork (hacky)
+
+added raw support for `.couchapprc` file
+
+before `couchapp push` hooks
+
+* on the fly compilation of CoffeeScript to JavaScript
+* optional concatination of JavScripts & Stylesheets
+* optional compression of JavaScript
+
+I know the code is bad, I needed a quick solution. But I'm open too feedback and if
+people like it, I'll make it more robust and send a pull request to mikael.
+
+## HowTo
+
+* CoffeeScript to JavaScript Compilation works out of the box. `_attachements/javascript/test.coffee`   
+  on your machine becomes `javascript/test.js` on your couch
+* run couchapp with the --concatinate parameter
+  `couchapp push app.js http://localhost:5984/mydb --concatinate`
+  concatination rules get set in a `assets.json` file that lives in your _attachements root path.  
+  It looks like this:
+  <pre>
+    {
+      "stylesheets": {
+        "app.css": [
+          "stylesheets/application",
+          "embed/vendor/jquery_ui/css/smoothness/jquery-ui-1.8.12.custom"
+        ]
+      }, 
+      "javascripts": {
+        "app.js": [
+          "javascripts/application",
+          "javascripts/controllers/application",
+          "javascripts/models/base",
+          "javascripts/collections/base",
+          "javascripts/views/application",
+          "javascripts/views/partial"
+        ], 
+        "vendor.js": [
+          "vendor/json2",
+          "vendor/jquery-1.6.1",
+          "vendor/underscore",
+          "vendor/backbone"
+        ]
+      }
+    }
+    
+  </pre>
+* compression works like concatination and may be also combined
+  `couchapp push app.js http://localhost:5984/mydb --compress`
+  
+Besides the command line parameters, you can also use a .couchapprc as known from the python version.
+Mine looks like this:
+
+<pre>
+{
+  "env" : {
+    "default" : {
+      "db" : "http://admin:password@localhost:5984/mydb"
+    },
+    "preview" : {
+      "db" : "http://admin:password@localhost:5984/mydb_preview",
+      "concatinate" : "true",
+      "compress" : "true"
+    },
+    "staging" : {
+      "db" : "http://admin:password@mydbserver.com:5984/mydb_staging",
+      "concatinate" : "true",
+      "compress" : "true"
+    },
+    "production" : {
+      "db" : "http://admin:password@mydbserver.com:5984/mydb",
+      "concatinate" : "true",
+      "compress" : "true"
+    }
+  }
+}
+</pre>
+
+## TODO's
+
+* gzip-compression of text assets
+* better code ... promise
