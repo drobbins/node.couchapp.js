@@ -94,8 +94,7 @@ people like it, I'll make it more robust and send a pull request to mikael.
   on your machine becomes `javascript/test.js` on your couch
 * run couchapp with the --concatinate parameter  
   `couchapp push app.js http://localhost:5984/mydb --concatinate`  
-  concatination rules get set in a `assets.json` file that lives in your _attachements root path.  
-  It looks like this:
+  concatination rules live in app.doc.config. I read it from a JSON file using my new `couchapp.loadJSON`, it looks like this:
   <pre>
     {
       "stylesheets": {

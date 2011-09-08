@@ -170,7 +170,30 @@ function createApp (doc, url, push_options, cb) {
   }
   
   var push = function (callback) {
-    if(push_options.concatinate) app.combine_assets();
+    if(push_options.concatinate) {
+      app.combine_assets();
+      
+      // var new_assets = {}
+      // for (var kind in app.doc.config.assets) {
+      //   new_assets[kind] = [];
+      //   for (group in app.doc.config.assets[kind]) {
+      //     new_assets[kind].push(group)
+      //   }
+      // }
+      // 
+      // app.doc.config.assets = new_assets;
+      
+      // app.doc.config.assets must exist anyway
+      app.doc.config.assets.concatenated = true
+    } else {
+      // for (var kind in app.doc.config.assets) {
+      //   for (group in app.doc.config.assets[kind]) {
+      //     for (file in app.doc.config.assets[kind][group]) {
+      //       app.doc.config.assets[kind][group] += kind == 'stylesheets' ? '.css' : '.js'
+      //     }
+      //   }
+      // }
+    }
     console.log('Serializing.')
     var doc = copy(app.doc);
     doc._attachments = copy(app.doc._attachments)
@@ -201,6 +224,7 @@ function createApp (doc, url, push_options, cb) {
     if (! push_options.compress) {
       return source;
     }
+    
     var jsp = require("uglify-js").parser;
     var pro = require("uglify-js").uglify;
 
@@ -210,10 +234,16 @@ function createApp (doc, url, push_options, cb) {
     return pro.gen_code(ast); // compressed code here
   };
   
-  // concatinate files based map in /_attachements/assets.json
+  // concatinate files based on map in app.doc.config.assets (/config/assets.json)
   app.combine_assets = function() {
+    if (push_options.compress) {
+      console.log('Combining & Compressing assets.')
+    } else {
+      console.log('Combining assets.')
+    }
+    
     var root        = app.doc.__attachments[0].root
-      , assets_map  = JSON.parse( fs.readFileSync( root + '/assets.json').toString() )
+      , assets_map  = app.doc.config && app.doc.config.assets
       , supported_extensions = ['js','coffee','css']
       , concatinated_files = {}
       , source
@@ -222,15 +252,12 @@ function createApp (doc, url, push_options, cb) {
       , ext
       , revpos = app.doc._rev ? parseInt(app.doc._rev.slice(0,app.doc._rev.indexOf('-'))) : 0;;
     
-    for(var what in assets_map) {
-      for(var concat_file in assets_map[what]) {
+    for(var kind in assets_map) {
+      for(var group in assets_map[kind]) {
         source = '';
-        concat_name = [what,concat_file].join('/');
-        for(var file in assets_map[what][concat_file]) {
-          att_name = assets_map[what][concat_file][file]
-          
-          // src_file => concatinated file:
-          // assets_map[what][concat_file][file] => [what,concat_file].join('/')
+        concat_name = [kind,group].join('/');
+        for(var file in assets_map[kind][group]) {
+          att_name = assets_map[kind][group][file]
           
           supported_extensions.forEach(function(ext) {
             if (path.existsSync(root + '/' + att_name +'.'+ext)) {
@@ -245,29 +272,24 @@ function createApp (doc, url, push_options, cb) {
             source += fs.readFileSync( root + '/' + att_name).toString();
           }
           
-          // console.log(app.doc._attachments[att_name].data && new Buffer(app.doc._attachments[att_name].data, 'base64').toString('utf8'))
-          // console.log(fs.readFileSync( [root, att_name].join('/') ).toString())
-          
           // remove source file
           delete app.doc._attachments[att_name];
           delete app.doc.attachments_md5[att_name];
         }
         
-        
-        ext = path.extname(concat_name).slice(1);
-        if (ext == 'js') {    
-          // console.log(source)
+        if (group == 'javascripts') {    
+          ext = 'js'
           source = compress_js(source)
+        } else {
+          ext = 'css'
         }
+        concat_name += '.' + ext;
         source = Buffer(source).toString('base64');
         app.doc._attachments[concat_name] = {data: source, content_type:mimetypes.lookup(ext)};
         app.doc.attachments_md5[concat_name] = {revpos:revpos + 1, md5:crypto.createHash('md5').update(source).digest('hex')};
         concatinated_files[ concat_name ] = source;
       }
     }
-    
-    // console.log(concatinated_files)
-    // console.log(app.doc._attachments)
   };
   
   app.push = function (callback) {
