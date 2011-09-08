@@ -92,8 +92,8 @@ people like it, I'll make it more robust and send a pull request to mikael.
 
 * CoffeeScript to JavaScript Compilation works out of the box. `_attachements/javascript/test.coffee`   
   on your machine becomes `javascript/test.js` on your couch
-* run couchapp with the --concatinate parameter
-  `couchapp push app.js http://localhost:5984/mydb --concatinate`
+* run couchapp with the --concatinate parameter  
+  `couchapp push app.js http://localhost:5984/mydb --concatinate`  
   concatination rules get set in a `assets.json` file that lives in your _attachements root path.  
   It looks like this:
   <pre>
@@ -123,7 +123,7 @@ people like it, I'll make it more robust and send a pull request to mikael.
     }
     
   </pre>
-* compression works like concatination and may be also combined
+* compression works like concatination and may be also combined  
   `couchapp push app.js http://localhost:5984/mydb --compress`
   
 Besides the command line parameters, you can also use a .couchapprc as known from the python version.
