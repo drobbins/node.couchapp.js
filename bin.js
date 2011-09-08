@@ -55,6 +55,36 @@ if (process.mainModule && process.mainModule.filename === __filename) {
     , couch = process.argv.shift()
     ;
 
+
+  // default `app` parameter to »app.js«
+  app || (app = 'app.js')
+  
+  // allow to provide `couch` w/o `app` parameter
+  
+  if (!app || !/\.js$/.test(app)) {
+    app = 'app.js'
+    couch = app
+  }
+  
+  // try to find couch in .couchapprc
+  if (! couch) {
+    var couchapprc = JSON.parse( fs.readFileSync('.couchapprc').toString() );
+    
+    couch = couchapprc.env['default'].db;
+  }
+
+  // allow to provide ENV var as `couch` parameter
+  if (!/^http/.test(couch)) {
+    var couchapprc = JSON.parse( fs.readFileSync('.couchapprc').toString() );
+    
+    
+    couch = couchapprc.env[ couch ].db;
+  }
+  
+  
+  console.log('app',app)
+  console.log('couch',couch)
+
   if (command == 'help' || command == undefined) {
     console.log(
       [ "couchapp -- utility for creating couchapps" 
