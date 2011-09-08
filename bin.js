@@ -42,8 +42,6 @@ function boiler (app) {
   app = app || '.'
 
   copytree(path.join(__dirname, 'boiler'), path.join(process.env.PWD, app));
-  
-  
 }
 
 
@@ -62,8 +60,8 @@ if (process.mainModule && process.mainModule.filename === __filename) {
   // allow to provide `couch` w/o `app` parameter
   
   if (!app || !/\.js$/.test(app)) {
-    app = 'app.js'
     couch = app
+    app = 'app.js'
   }
   
   // try to find couch in .couchapprc
@@ -73,17 +71,14 @@ if (process.mainModule && process.mainModule.filename === __filename) {
     couch = couchapprc.env['default'].db;
   }
 
+  console.log('couch',couch)
+  
+
   // allow to provide ENV var as `couch` parameter
   if (!/^http/.test(couch)) {
     var couchapprc = JSON.parse( fs.readFileSync('.couchapprc').toString() );
-    
-    
     couch = couchapprc.env[ couch ].db;
   }
-  
-  
-  console.log('app',app)
-  console.log('couch',couch)
 
   if (command == 'help' || command == undefined) {
     console.log(
