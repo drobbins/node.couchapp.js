@@ -9,6 +9,7 @@
   { "watch": "*"
   , "request": "*"
   , "coffee-script": "*"
+  , "uglify-js": "*"
   }
 , "bin": { "couchapp" : "./bin.js" }
 }

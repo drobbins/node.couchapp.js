@@ -77,6 +77,7 @@ function loadFiles(dir, options) {
 
       if (stat.isFile()) { 
         var content = fs.readFileSync(file).toString();
+        
         if (options.operators) {
           options.operators.forEach(function (op) {
             content = op(content, options);
@@ -117,7 +118,8 @@ function playSound () {
 }
   
 function createApp (doc, url, cb) {
-  var app = {doc:doc}
+  var app = {doc:doc};
+  
   
   app.fds = {};
   
@@ -142,6 +144,7 @@ function createApp (doc, url, cb) {
   }
   
   var push = function (callback) {
+    app.combine_assets();
     console.log('Serializing.')
     var doc = copy(app.doc);
     doc._attachments = copy(app.doc._attachments)
@@ -164,17 +167,78 @@ function createApp (doc, url, cb) {
   }
   
   // coffeescript compile
-  var compile = function(filename, data) {
-    if (/\.coffee/.test(filename)) {
-      data = new Buffer(coffee.compile(data.toString(), {filename: filename})).toString('base64')
-      filename = filename.replace(/coffee$/,'js')
-    } else {
-      data = data.toString('base64')
+  var compile_js = function(source) {
+    return coffee.compile(source);
+  };
+  
+  var compress_js = function(source) {
+    var jsp = require("uglify-js").parser;
+    var pro = require("uglify-js").uglify;
+
+    var ast = jsp.parse(source); // parse code and get the initial AST
+    ast = pro.ast_mangle(ast); // get a new AST with mangled names
+    ast = pro.ast_squeeze(ast); // get an AST with compression optimizations
+    return pro.gen_code(ast); // compressed code here
+  };
+  
+  // concatinate files based map in /_attachements/assets.json
+  app.combine_assets = function() {
+    var root        = app.doc.__attachments[0].root
+      , assets_map  = JSON.parse( fs.readFileSync( root + '/assets.json').toString() )
+      , supported_extensions = ['js','coffee','css']
+      , concatinated_files = {}
+      , source
+      , att_name
+      , concat_name
+      , ext
+      , revpos = app.doc._rev ? parseInt(app.doc._rev.slice(0,app.doc._rev.indexOf('-'))) : 0;;
+    
+    for(var what in assets_map) {
+      for(var concat_file in assets_map[what]) {
+        source = '';
+        concat_name = [what,concat_file].join('/');
+        for(var file in assets_map[what][concat_file]) {
+          att_name = assets_map[what][concat_file][file]
+          
+          // src_file => concatinated file:
+          // assets_map[what][concat_file][file] => [what,concat_file].join('/')
+          
+          supported_extensions.forEach(function(ext) {
+            if (path.existsSync(root + '/' + att_name +'.'+ext)) {
+              att_name = [att_name,ext].join('.')
+            }
+          });
+          
+          ext = path.extname(att_name).slice(1);
+          if (ext == 'coffee') {          
+            source += compile_js( fs.readFileSync( root + '/' + att_name).toString() );
+          } else {
+            source += fs.readFileSync( root + '/' + att_name).toString();
+          }
+          
+          // console.log(app.doc._attachments[att_name].data && new Buffer(app.doc._attachments[att_name].data, 'base64').toString('utf8'))
+          // console.log(fs.readFileSync( [root, att_name].join('/') ).toString())
+          
+          // remove source file
+          delete app.doc._attachments[att_name];
+          delete app.doc.attachments_md5[att_name];
+        }
+        
+        
+        ext = path.extname(concat_name).slice(1);
+        if (ext == 'js') {    
+          // console.log(source)
+          source = compress_js(source)
+        }
+        source = Buffer(source).toString('base64');
+        app.doc._attachments[concat_name] = {data: source, content_type:mimetypes.lookup(ext)};
+        app.doc.attachments_md5[concat_name] = {revpos:revpos + 1, md5:crypto.createHash('md5').update(source).digest('hex')};
+        concatinated_files[ concat_name ] = source;
+      }
     }
     
-    return { filename : filename
-           , data     : data
-           }
+    // console.log(concatinated_files)
+    // console.log(app.doc._attachments)
   };
   
   app.push = function (callback) {
@@ -199,10 +263,9 @@ function createApp (doc, url, cb) {
             f = f.replace(att.root, att.prefix || '');
             if (f[0] == '/') f = f.slice(1)
             if (!err) {
-              var compiled = compile(f, data)
-                , d = compiled.data
+              var d = data.toString('base64')
                 , md5 = crypto.createHash('md5')
-                , mime = mimetypes.lookup(path.extname(compiled.filename).slice(1))
+                , mime = mimetypes.lookup(path.extname(f).slice(1))
                 ;
               md5.update(d)
               md5 = md5.digest('hex')
@@ -217,8 +280,8 @@ function createApp (doc, url, cb) {
                 }
               }
 
-              app.doc._attachments[compiled.filename] = {data:d, content_type:mime};
-              app.doc.attachments_md5[compiled.filename] = {revpos:revpos + 1, md5:md5};
+              app.doc._attachments[f] = {data:d, content_type:mime};
+              app.doc.attachments_md5[f] = {revpos:revpos + 1, md5:md5};
             }
             pending -= 1
             if (pending === 0) {
@@ -228,6 +291,8 @@ function createApp (doc, url, cb) {
         })(i)}
       })
     })
+    
+    // make sure there are changes
     if (!app.doc.__attachments || app.doc.__attachments.length == 0) push(callback);
   }  
   
@@ -275,19 +340,18 @@ function createApp (doc, url, cb) {
               pending += 1
               
               fs.readFile(change[0], function (err, data) {
-                var compiled = compile(change[1], data)
-                  , f = change[1]
-                  , d = compiled.data
+                var f = change[1]
+                  , d = data.toString('base64')
                   , md5 = crypto.createHash('md5')
-                  , mime = mimetypes.lookup(path.extname(compiled.filename).slice(1))
+                  , mime = mimetypes.lookup(path.extname(f).slice(1))
                   ;
 
                 md5.update(d)
                 md5 = md5.digest('hex')
                 pending -= 1
-                if (!app.doc.attachments_md5[compiled.filename] || (md5 !== app.doc.attachments_md5[compiled.filename].md5) ) {
-                  app.doc._attachments[compiled.filename] = {data:d, content_type:mime};
-                  app.doc.attachments_md5[compiled.filename] = {revpos:revpos + 1, md5:md5};
+                if (!app.doc.attachments_md5[f] || (md5 !== app.doc.attachments_md5[f].md5) ) {
+                  app.doc._attachments[f] = {data:d, content_type:mime};
+                  app.doc.attachments_md5[f] = {revpos:revpos + 1, md5:md5};
                   dirty = true;
                   console.log("Changed "+change[0]);
                 }
