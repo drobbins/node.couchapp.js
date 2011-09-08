@@ -6,6 +6,7 @@ var path = require('path')
   , crypto = require('crypto')
   , mimetypes = require('./mimetypes')
   , spawn = require('child_process').spawn
+  , coffee = require('coffee-script')
   ;
 
 var h = {'content-type':'application/json', 'accept-type':'application/json'}
@@ -145,6 +146,7 @@ function createApp (doc, url, cb) {
     var doc = copy(app.doc);
     doc._attachments = copy(app.doc._attachments)
     delete doc.__attachments;
+    
     var body = JSON.stringify(doc)
     console.log('PUT '+url.replace(/^(https?:\/\/[^@:]+):[^@]+@/, '$1:******@'))
     request({uri:url, method:'PUT', body:body, headers:h}, function (err, resp, body) {
@@ -160,6 +162,20 @@ function createApp (doc, url, cb) {
       })
     })
   }
+  
+  // coffeescript compile
+  var compile = function(filename, data) {
+    if (/\.coffee/.test(filename)) {
+      data = new Buffer(coffee.compile(data.toString(), {filename: filename})).toString('base64')
+      filename = filename.replace(/coffee$/,'js')
+    } else {
+      data = data.toString('base64')
+    }
+    
+    return { filename : filename
+           , data     : data
+           }
+  };
   
   app.push = function (callback) {
     var revpos
@@ -183,9 +199,10 @@ function createApp (doc, url, cb) {
             f = f.replace(att.root, att.prefix || '');
             if (f[0] == '/') f = f.slice(1)
             if (!err) {
-              var d = data.toString('base64')
+              var compiled = compile(f, data)
+                , d = compiled.data
                 , md5 = crypto.createHash('md5')
-                , mime = mimetypes.lookup(path.extname(f).slice(1))
+                , mime = mimetypes.lookup(path.extname(compiled.filename).slice(1))
                 ;
               md5.update(d)
               md5 = md5.digest('hex')
@@ -199,8 +216,9 @@ function createApp (doc, url, cb) {
                   return; // Does not need to be updated.
                 }
               }
-              app.doc._attachments[f] = {data:d, content_type:mime};
-              app.doc.attachments_md5[f] = {revpos:revpos + 1, md5:md5};
+
+              app.doc._attachments[compiled.filename] = {data:d, content_type:mime};
+              app.doc.attachments_md5[compiled.filename] = {revpos:revpos + 1, md5:md5};
             }
             pending -= 1
             if (pending === 0) {
