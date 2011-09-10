@@ -10,6 +10,7 @@
   , "request": "*"
   , "coffee-script": "*"
   , "uglify-js": "*"
+  , "sqwish" : "*"
   }
 , "bin": { "couchapp" : "./bin.js" }
 }

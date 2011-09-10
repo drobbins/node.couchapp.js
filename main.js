@@ -234,6 +234,13 @@ function createApp (doc, url, push_options, cb) {
     return pro.gen_code(ast); // compressed code here
   };
   
+  var compress_css = function(source) {
+    if (! push_options.compress) {
+      return source;
+    }
+    return require("sqwish").minify(source)
+  };
+  
   // concatinate files based on map in app.doc.config.assets (/config/assets.json)
   app.combine_assets = function() {
     if (push_options.compress) {
@@ -282,6 +289,7 @@ function createApp (doc, url, push_options, cb) {
           source = compress_js(source)
         } else {
           ext = 'css'
+          source = compress_css(source)
         }
         concat_name += '.' + ext;
         source = Buffer(source).toString('base64');
