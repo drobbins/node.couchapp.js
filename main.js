@@ -172,33 +172,14 @@ function createApp (doc, url, push_options, cb) {
   var push = function (callback) {
     if(push_options.concatinate) {
       app.combine_assets();
-      
-      // var new_assets = {}
-      // for (var kind in app.doc.config.assets) {
-      //   new_assets[kind] = [];
-      //   for (group in app.doc.config.assets[kind]) {
-      //     new_assets[kind].push(group)
-      //   }
-      // }
-      // 
-      // app.doc.config.assets = new_assets;
-      
-      // app.doc.config.assets must exist anyway
       app.doc.config.assets.concatenated = true
-    } else {
-      // for (var kind in app.doc.config.assets) {
-      //   for (group in app.doc.config.assets[kind]) {
-      //     for (file in app.doc.config.assets[kind][group]) {
-      //       app.doc.config.assets[kind][group] += kind == 'stylesheets' ? '.css' : '.js'
-      //     }
-      //   }
-      // }
     }
+    
     console.log('Serializing.')
     var doc = copy(app.doc);
     doc._attachments = copy(app.doc._attachments)
     delete doc.__attachments;
-    
+
     var body = JSON.stringify(doc)
     console.log('PUT '+url.replace(/^(https?:\/\/[^@:]+):[^@]+@/, '$1:******@'))
     request({uri:url, method:'PUT', body:body, headers:h}, function (err, resp, body) {
@@ -292,7 +273,8 @@ function createApp (doc, url, push_options, cb) {
           source = compress_css(source)
         }
         concat_name += '.' + ext;
-        source = Buffer(source).toString('base64');
+        
+        source = Buffer(source).toString('base64'); // 
         app.doc._attachments[concat_name] = {data: source, content_type:mimetypes.lookup(ext)};
         app.doc.attachments_md5[concat_name] = {revpos:revpos + 1, md5:crypto.createHash('md5').update(source).digest('hex')};
         concatinated_files[ concat_name ] = source;
