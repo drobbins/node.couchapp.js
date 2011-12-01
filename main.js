@@ -10,17 +10,17 @@ var path = require('path')
   ;
 
 var h = {'content-type':'application/json', 'accept-type':'application/json'}
-  
+
 /**
  * Recursively load directory contents into ddoc
  *
  * It's really convenient to see the main couchapp code in single file,
  * rather than mapped into little files in lots of directories like
- * the python couchapp. But there are definitely cases where we might want 
+ * the python couchapp. But there are definitely cases where we might want
  * to use some module or another on the server side. This addition
- * loads file contents from a given directory (recursively) into a js 
- * object that can be added to a design document and require()'d in 
- * lists, shows, etc. 
+ * loads file contents from a given directory (recursively) into a js
+ * object that can be added to a design document and require()'d in
+ * lists, shows, etc.
  *
  * Use couchapp.loadFiles() in app.js like this:
  *
@@ -32,11 +32,11 @@ var h = {'content-type':'application/json', 'accept-type':'application/json'}
  *      , vendor: couchapp.loadFiles('./vendor')
  *    }
  *
- * Optionally, pass in operators to process file contents. For example, 
+ * Optionally, pass in operators to process file contents. For example,
  * generate mustache templates from jade templates.
  *
  * In yourapp/templates/index.jade
- *  
+ *
  * !!!5
  * html
  *   head
@@ -61,7 +61,7 @@ var h = {'content-type':'application/json', 'accept-type':'application/json'}
  *   };
  *
  * ddoc = { ... };
- * 
+ *
  * ddoc.templates = loadFiles(dir, options);
  */
 
@@ -75,9 +75,9 @@ function loadFiles(dir, options) {
       , prop = listing.split('.')[0] // probably want regexp or something more robust
       , stat = fs.statSync(file);
 
-      if (stat.isFile()) { 
+      if (stat.isFile()) {
         var content = fs.readFileSync(file).toString();
-        
+
         if (options.operators) {
           options.operators.forEach(function (op) {
             content = op(content, options);
@@ -101,9 +101,9 @@ function loadJSON(dir, options) {
       , prop = listing.split('.')[0] // probably want regexp or something more robust
       , stat = fs.statSync(file);
 
-      if (stat.isFile()) { 
+      if (stat.isFile()) {
         var content = JSON.parse(fs.readFileSync(file).toString());
-        
+
         if (options.operators) {
           options.operators.forEach(function (op) {
             content = op(content, options);
@@ -130,6 +130,7 @@ function loadAttachments (doc, root, prefix) {
     throw e
     throw new Error("Cannot stat file "+root)
   }
+  console.log("Loading attachments");
   doc.__attachments.push({root:root, prefix:prefix});
 }
 
@@ -142,13 +143,13 @@ function copy (obj) {
 function playSound () {
   spawn("/usr/bin/afplay", ["/System/Library/Sounds/Blow.aiff"]);
 }
-  
+
 function createApp (doc, url, push_options, cb) {
   var app = {doc:doc};
-  
-  
+
+
   app.fds = {};
-  
+
   app.prepare = function () {
     var p = function (x) {
       for (i in x) {
@@ -168,13 +169,13 @@ function createApp (doc, url, push_options, cb) {
     app.doc.attachments_md5 = app.doc.attachments_md5 || {}
     app.doc._attachments = app.doc._attachments || {}
   }
-  
+
   var push = function (callback) {
     if(push_options.concatinate) {
       app.combine_assets();
       app.doc.config.assets.concatenated = true
     }
-    
+
     console.log('Serializing.')
     var doc = copy(app.doc);
     doc._attachments = copy(app.doc._attachments)
@@ -195,17 +196,17 @@ function createApp (doc, url, push_options, cb) {
       })
     })
   }
-  
+
   // coffeescript compile
   var compile_js = function(source) {
     return coffee.compile(source);
   };
-  
+
   var compress_js = function(source) {
     if (! push_options.compress) {
       return source;
     }
-    
+
     var jsp = require("uglify-js").parser;
     var pro = require("uglify-js").uglify;
 
@@ -214,14 +215,14 @@ function createApp (doc, url, push_options, cb) {
     ast = pro.ast_squeeze(ast); // get an AST with compression optimizations
     return pro.gen_code(ast); // compressed code here
   };
-  
+
   var compress_css = function(source) {
     if (! push_options.compress) {
       return source;
     }
     return require("sqwish").minify(source)
   };
-  
+
   // concatinate files based on map in app.doc.config.assets (/config/assets.json)
   app.combine_assets = function() {
     if (push_options.compress) {
@@ -229,7 +230,7 @@ function createApp (doc, url, push_options, cb) {
     } else {
       console.log('Combining assets.')
     }
-    
+
     var root        = app.doc.__attachments[0].root
       , assets_map  = app.doc.config && app.doc.config.assets
       , supported_extensions = ['js','coffee','css']
@@ -239,33 +240,33 @@ function createApp (doc, url, push_options, cb) {
       , concat_name
       , ext
       , revpos = app.doc._rev ? parseInt(app.doc._rev.slice(0,app.doc._rev.indexOf('-'))) : 0;;
-    
+
     for(var kind in assets_map) {
       for(var group in assets_map[kind]) {
         source = '';
         concat_name = [kind,group].join('/');
         for(var file in assets_map[kind][group]) {
           att_name = assets_map[kind][group][file]
-          
+
           supported_extensions.forEach(function(ext) {
             if (path.existsSync(root + '/' + att_name +'.'+ext)) {
               att_name = [att_name,ext].join('.')
             }
           });
-          
+
           ext = path.extname(att_name).slice(1);
-          if (ext == 'coffee') {          
+          if (ext == 'coffee') {
             source += compile_js( fs.readFileSync( root + '/' + att_name).toString() );
           } else {
             source += fs.readFileSync( root + '/' + att_name).toString();
           }
-          
+
           // remove source file
           delete app.doc._attachments[att_name];
           delete app.doc.attachments_md5[att_name];
         }
-        
-        if (group == 'javascripts') {    
+
+        if (group == 'javascripts') {
           ext = 'js'
           source = compress_js(source)
         } else {
@@ -273,20 +274,20 @@ function createApp (doc, url, push_options, cb) {
           source = compress_css(source)
         }
         concat_name += '.' + ext;
-        
-        source = Buffer(source).toString('base64'); // 
+
+        source = Buffer(source).toString('base64'); //
         app.doc._attachments[concat_name] = {data: source, content_type:mimetypes.lookup(ext)};
         app.doc.attachments_md5[concat_name] = {revpos:revpos + 1, md5:crypto.createHash('md5').update(source).digest('hex')};
         concatinated_files[ concat_name ] = source;
       }
     }
   };
-  
+
   app.push = function (callback) {
     var revpos
       , pending = 0
       ;
-    
+
     console.log('Preparing.')
     var doc = app.current;
     for (i in app.doc) {
@@ -295,7 +296,7 @@ function createApp (doc, url, push_options, cb) {
     app.doc = doc;
     app.prepare();
     revpos = app.doc._rev ? parseInt(app.doc._rev.slice(0,app.doc._rev.indexOf('-'))) : 0;
-    
+
     app.doc.__attachments.forEach(function (att) {
       watch.walk(att.root, {ignoreDotFiles:true}, function (err, files) {
         for (i in files) { (function (f) {
@@ -311,8 +312,8 @@ function createApp (doc, url, push_options, cb) {
               md5.update(d)
               md5 = md5.digest('hex')
               if (app.doc.attachments_md5[f] && app.doc._attachments[f]) {
-                if (app.doc._attachments[f].revpos === app.doc.attachments_md5[f].revpos && 
-                    app.doc.attachments_md5[f].md5 === md5) {   
+                if (app.doc._attachments[f].revpos === app.doc.attachments_md5[f].revpos &&
+                    app.doc.attachments_md5[f].md5 === md5) {
                   pending -= 1
                   if (pending === 0) {
                     push(callback)
@@ -332,21 +333,21 @@ function createApp (doc, url, push_options, cb) {
         })(i)}
       })
     })
-    
+
     // make sure there are changes
     if (!app.doc.__attachments || app.doc.__attachments.length == 0) push(callback);
-  }  
-  
+  }
+
   app.sync = function (callback) {
     // A few notes.
-    //   File change events are stored in an array and bundled up in to one write call., 
+    //   File change events are stored in an array and bundled up in to one write call.,
     // this reduces the amount of unnecessary processing as we get a lof of change events.
     //   The file descriptors are stored and re-used because it cuts down on the number of bad change events.
     //   And finally, we check the md5 and only push when the document is actually been changed.
     //   A lot of crazy workarounds for the fact that we basically get an event every time someone
     // looks funny at the underlying files and even reading and opening fds to check on the file trigger
     // more events.
-    
+
     app.push(function () {
       var changes = [];
       console.log('Watching files for changes...')
@@ -379,7 +380,7 @@ function createApp (doc, url, push_options, cb) {
               console.log("Removed "+change[1]);
             } else {
               pending += 1
-              
+
               fs.readFile(change[0], function (err, data) {
                 var f = change[1]
                   , d = data.toString('base64')
@@ -398,10 +399,10 @@ function createApp (doc, url, push_options, cb) {
                 }
                 if (pending == 0 && dirty) push(function () {dirty = false; setTimeout(check, 50)})
                 else if (pending == 0 && !dirty) setTimeout(check, 50)
-                
+
               })
             }
-            
+
           })
           changes = []
           if (pending == 0 && dirty) push(function () {dirty = false; setTimeout(check, 50)})
@@ -414,7 +415,7 @@ function createApp (doc, url, push_options, cb) {
     })
   }
   var _id = doc.app ? doc.app._id : doc._id
-  
+
   if (url.slice(url.length - _id.length) !== _id) url += '/' + _id;
 
   request({uri:url, headers:h}, function (err, resp, body) {

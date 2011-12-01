@@ -28,8 +28,8 @@ function copytree (source, dest) {
               if (err) throw err;
             });
           })
-        } 
-      })(i); 
+        }
+      })(i);
     }
   })
 }
@@ -49,7 +49,7 @@ if (process.mainModule && process.mainModule.filename === __filename) {
   args = []
   options = {}
   var couchapprc = JSON.parse( fs.readFileSync('.couchapprc').toString() );
-  
+
   process.argv.forEach(function(arg) {
     if (/^--/.test(arg)) {
       options[arg.substr(2)] = 1
@@ -57,7 +57,7 @@ if (process.mainModule && process.mainModule.filename === __filename) {
       args.push(arg)
     }
   });
-    
+
   var node = args.shift()
     , bin = args.shift()
     , command = args.shift()
@@ -69,14 +69,14 @@ if (process.mainModule && process.mainModule.filename === __filename) {
 
   // default `app` parameter to »app.js«
   app || (app = 'app.js')
-  
+
   // allow to provide `couch` w/o `app` parameter
-  
+
   if (!app || !/\.js$/.test(app)) {
     couch = app
     app = 'app.js'
   }
-  
+
   // try to find couch in .couchapprc
   // allow to provide ENV var as `couch` parameter
   if (!/^http/.test(couch)) {
@@ -100,15 +100,12 @@ if (process.mainModule && process.mainModule.filename === __filename) {
     )
     process.exit();
   }
-  
+
   for(var key in couchapprc.env[ ENV ]) {
     if (key == 'db') continue;
     options[key] || (options[key] = couchapprc.env[ ENV ][key])
   }
-  
-  console.log('options', options)
-  
-  
+
   if (command == 'boiler') {
     boiler(app);
   } else {
