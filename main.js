@@ -140,7 +140,6 @@ function loadAttachments (doc, root, prefix) {
     throw e
     throw new Error("Cannot stat file "+root)
   }
-  console.log("Loading attachments");
   doc.__attachments.push({root:root, prefix:prefix});
 }
 
