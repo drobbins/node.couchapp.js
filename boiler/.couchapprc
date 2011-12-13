@@ -1,0 +1,10 @@
+{
+  "env" : {
+    "default" : {
+      "db" : "http://robbinsd:password@localhost:5984/boiler"
+    },
+    "staging" : {
+      "db" : "http://admin:password@myhost.com/mydb"
+    }
+  }
+}
