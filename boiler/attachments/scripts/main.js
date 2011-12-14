@@ -6,7 +6,7 @@ require.config({
 });
 
 //main.js
-require(['jquery'], function($){
+require(['jquery','underscore-min', 'backbone'], function($){
  $(document).ready(function(){
 
 
