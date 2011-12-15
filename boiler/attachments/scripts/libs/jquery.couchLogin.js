@@ -64,17 +64,17 @@
     }
     var templates = {
         adminParty : '<p><strong>Admin party, everyone is admin!</strong> Fix this in <a href="/_utils/index.html">Futon</a> before proceeding.</p>',
-        loggedOut : '<a href="#signup">Signup</a> or <a href="#login">Login</a>',
-        loginForm : '<form class="login"><label for="name">Name</label> <input type="text" name="name" value="" autocapitalize="off" autocorrect="off"><label for="password">Password</label> <input type="password" name="password" value=""><input type="submit" value="Login"><a href="#signup">or Signup</a></form>',
-        signupForm : '<form class="signup"><label for="name">Name</label> <input type="text" name="name" value="" autocapitalize="off" autocorrect="off"><label for="password">Password</label> <input type="password" name="password" value=""><input type="submit" value="Signup"><a href="#login">or Login</a></form>'
+        loggedOut : '<ul class="nav"><li><a href="#signup">Signup</a></li><li><a href="#login">Login</a></li></ul>',
+        loginForm : '<form class="login">\n<input type="text" name="name" placeholder="Username" class="input-small">\n<input type="password" name="password" placeholder="Password" class="input-small">\n<button type="submit" class="btn">Login</button>\n<a href="#signup">or Signup</a>\n</form>',
+        signupForm : '<form class="signup">\n<input type="text" name="name" placeholder="Username" class="input-small">\n<input type="password" name="password" placeholder="Password" class="input-small">\n<button type="submit" class="btn">Sign Up</button>\n<a href="#login">or Login</a>\n</form>'
     };
     function loggedIn(r) {
         var auth_db = encodeURIComponent(r.info.authentication_db)
         , uri_name = encodeURIComponent(r.userCtx.name)
-        , span = $('<span>Welcome <a target="_new" href="/_utils/document.html?' 
+        , span = $('<ul class="nav"><li><a target="_new" href="/_utils/document.html?' 
             + auth_db +'/org.couchdb.user%3A' + uri_name 
-            + '" class="name"></a>! <a href="#logout">Logout?</a></span>');
-        $('a.name', span).text(r.userCtx.name); // you can get the user name here
+            + '" class="name"></a></li><li><a href="#logout">Logout?</a></li></ul>');
+        $('a.name', span).text("Welcome "+r.userCtx.name); // you can get the user name here
         return span;
     }
 })(jQuery);
