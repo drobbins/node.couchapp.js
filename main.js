@@ -1,5 +1,4 @@
 var path = require('path')
-  , sys = require('sys')
   , fs = require('fs')
   , watch = require('watch')
   , request = require('request')
@@ -307,6 +306,7 @@ function createApp (doc, url, push_options, cb) {
     app.doc = doc;
     app.prepare();
     revpos = app.doc._rev ? parseInt(app.doc._rev.slice(0,app.doc._rev.indexOf('-'))) : 0;
+
     pending_dirs = app.doc.__attachments.length;
     app.doc.__attachments.forEach(function (att) {
       watch.walk(att.root, {ignoreDotFiles:true}, function (err, files) {
