@@ -25,12 +25,10 @@
       'underscore',
       'backbone',
       'sha1',
-    ],
-    function($,_,Backbone,App){
+    ], function($,a,b,_,Backbone,App){
       $(document).ready(function(){
         console.log('Read, set, go!');
         $("#auth").couchLogin();
-        var a=_,b=Backbone,c=$;
       });
   });
 }());

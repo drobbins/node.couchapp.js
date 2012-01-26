@@ -59,14 +59,14 @@
             $.couch.signup({name : name}, pass, {
                 success : function() {doLogin(name, pass)}
             });
-            return false;      
+            return false;
         });
     }
     var templates = {
         adminParty : '<p><strong>Admin party, everyone is admin!</strong> Fix this in <a href="/_utils/index.html">Futon</a> before proceeding.</p>',
         loggedOut : '<ul class="nav"><li><a href="#signup">Signup</a></li><li><a href="#login">Login</a></li></ul>',
-        loginForm : '<form class="login">\n<input type="text" name="name" placeholder="Username" class="input-small">\n<input type="password" name="password" placeholder="Password" class="input-small">\n<button type="submit" class="btn">Login</button>\n<a href="#signup">or Signup</a>\n</form>',
-        signupForm : '<form class="signup">\n<input type="text" name="name" placeholder="Username" class="input-small">\n<input type="password" name="password" placeholder="Password" class="input-small">\n<button type="submit" class="btn">Sign Up</button>\n<a href="#login">or Login</a>\n</form>'
+        loginForm : '<form class="login"> <input type="text" name="name" placeholder="Username" class="input-small"> <input type="password" name="password" placeholder="Password" class="input-small"> <button type="submit" class="btn">Login</button> <a href="#signup">or Signup</a></form>',
+        signupForm : '<form class="signup"> <input type="text" name="name" placeholder="Username" class="input-small"> <input type="password" name="password" placeholder="Password" class="input-small"> <button type="submit" class="btn">Sign Up</button> <a href="#login">or Login</a> </form>'
     };
     function loggedIn(r) {
         var auth_db = encodeURIComponent(r.info.authentication_db)

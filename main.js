@@ -70,33 +70,35 @@ function loadFiles(dir, options) {
     , options = options || {}
     , obj = {};
 
-  if(options.ignore.some(function(el){
-    if(dir.match(el)){
-      return true;
-    } else {
-      return false;
-    }
-  })){
-    return;
-  }
 
   listings.forEach(function (listing) {
     var file = path.join(dir, listing)
       , prop = listing.split('.')[0] // probably want regexp or something more robust
       , stat = fs.statSync(file);
 
-      if (stat.isFile()) {
-        var content = fs.readFileSync(file).toString();
-
-        if (options.operators) {
-          options.operators.forEach(function (op) {
-            content = op(content, options);
-          });
-        }
-        obj[prop] = content;
-      } else if (stat.isDirectory()) {
-        obj[listing] = loadFiles(file, options);
+    if(options.ignore.some(function(el){
+      if(listing.match(el)){
+        return true;
+      } else {
+        return false;
       }
+    })){
+      console.log(listing);
+      return;
+    }
+
+    if (stat.isFile()) {
+      var content = fs.readFileSync(file).toString();
+
+      if (options.operators) {
+        options.operators.forEach(function (op) {
+          content = op(content, options);
+        });
+      }
+      obj[prop] = content;
+    } else if (stat.isDirectory()) {
+      obj[listing] = loadFiles(file, options);
+    }
   });
 
   return obj;
