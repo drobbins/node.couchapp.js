@@ -82,7 +82,6 @@ function loadFiles(dir, options) {
         return false;
       }
     })){
-      console.log(listing);
       return;
     }
 
